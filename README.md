@@ -12,4 +12,6 @@ A few things to note:
 
 3. From then on you just make your own functions and throw them in there! 
 
+* NOT USABLE YET BECAUSE I HAVEN'T ADDED THE COMBAT CONTROLLER REQUIRED FOR THE AI TO DO DAMAGE*
+
 Have fun!
