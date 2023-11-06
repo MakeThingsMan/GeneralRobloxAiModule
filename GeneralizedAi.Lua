@@ -21,7 +21,7 @@ local screenShake					= game.ReplicatedStorage:WaitForChild("ScreenShake")
 local StunPlayer					= game.ReplicatedStorage:WaitForChild("StunPlayer")
 local config						= require(script.Parent.NpcConfig)
 local Switch						= require(game.ServerScriptService.Switch)
-local optimizedPlayerTable			= require(game.ServerScriptService.DataController.PlayerTableUpdater)
+local optimizedPlayerTable			= require(game.ServerScriptService.GeneralizedDataController.PlayerTableUpdater)
 local npc 							= script.Parent
 
 
@@ -32,6 +32,8 @@ npc.PrimaryPart:SetNetworkOwner(nil)
 local humanoid						= script.Parent:WaitForChild("NpcHumanoid")
 local animator						= humanoid.Animator
 local loadedAnimations				= {}
+
+task.wait(5) -- this is just here because I didn't provide my region script that monitors the location of all the players in the game for A.I's
 
 --------------------------------------------------------------------------------------- Movement Section
 local trueTarget					= {
@@ -82,8 +84,8 @@ end
 
 function closestPlayer()
 	for i, v in pairs(config.regions) do -- get the availabile players in the regions that you're allowed to check
-		local targetablePlayersInRegion = getPlayersInRegion:Invoke(v)
-		for i, v in pairs(targetablePlayersInRegion) do 
+		local targetablePlayers = game.Players:GetPlayers()
+		for i, v in pairs(targetablePlayers) do 
 			local success, distance = CheckInBounds(v) -- check to see which ones are in bounds
 			if success and distance < trueTarget.Distance and Players[v.Name].Character.Humanoid.Health > 0  then 
 				trueTarget.Name = v.Name 
@@ -662,21 +664,6 @@ function combatControl()
 				config.blockable = true
 				config.Block.Current = config.Block.Max
 			end
-			if config.onCooldown.Enchant < 20 and config.States.SpStates.Enchanted then
-				config.States.SpStates.Enchanted = false
-				config.Damage.Swing1.Damage -= 5
-				config.Damage.Swing2.Damage -= 5
-				npc.EliteArmor.Weapon.Edge.Color 	= Color3.new(0.678431, 0.376471, 0.145098)
-				npc.EliteArmor.Weapon.Edge.Material = Enum.Material.Metal
-			end
-		end
-		
-		if config.States.SpStates.Enchanted then 
-			config.States.SpStates.Enchanted = false
-			config.Damage.Swing1.Damage -= 5
-			config.Damage.Swing2.Damage -= 5
-			npc.EliteArmor.Weapon.Edge.Color 	= Color3.new(0.678431, 0.376471, 0.145098)
-			npc.EliteArmor.Weapon.Edge.Material = Enum.Material.Metal
 		end
 	end)
 
@@ -698,7 +685,7 @@ end
 
 local currentHealth = humanoid.Health
 
-humanoid.HealthChanged:Connect(function(health) -- this deals with the character taking damage
+humanoid.HealthChanged:Connect(function(health) -- this deals with the npc taking damage
 	local change = currentHealth - health
 	if change > 1 then 
 		config.blockable = false -- let the npc know that it's not allowed to block this attack because it's been hit
@@ -754,6 +741,7 @@ while humanoid.Health > 0 do -- this one simply moves towards the player that is
 		local complete = followPath(Players[trueTarget.Name].Character.PrimaryPart.Position)
 		task.wait(.3) --this limits the amount of times the controller actually recalculates the path .3 worked best for me.
 	elseif config.currentState ~= "Patrolling" and config.currentState ~= "Targetting" and config.currentCombatState == "" and config.currentState ~= "Stationary" then 
+		print("patrolling!")
 		loadedAnimations.Run:Stop()
 		if config.currentState == "Idle" then
 			loadedAnimations.Idle:Play()
@@ -764,7 +752,6 @@ while humanoid.Health > 0 do -- this one simply moves towards the player that is
 		patrolPath()	
 	end 
 	lastPosition = npc.HumanoidRootPart.Position
-	config.currentMovementState = config.currentState
 	task.wait(.05)
 end
 
